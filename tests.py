@@ -1,4 +1,5 @@
 import json
+import os
 import unittest
 
 from call_me_patient.models import Patient, PatientInfo
@@ -7,7 +8,11 @@ from call_me_patient.patients import DummyPatientQuery, JSONFilePatientQuery
 from call_me_patient.wranglers import AverageWrangler, MostRepeatedWrangler
 
 
-EXAMPLE_PATIENT_JSON_FILENAME = 'example_data.json'
+CURRENT_PATH = os.path.split(os.path.realpath(__file__))[0]
+EXAMPLE_PATIENT_JSON_FILENAME = os.path.join(
+    os.path.join(CURRENT_PATH, 'call_me_patient'),
+    'example_data.json'
+)
 
 
 class AssertResultTestCase(unittest.TestCase):
@@ -128,7 +133,7 @@ class PatientQueriesTest(AssertResultTestCase):
     }
     DUMMY_SINGLE_WRANGLER = DummyPatientQuery(wranglers=[MostRepeatedWrangler()], dummy_data=DUMMY_DATA)
     DUMMY_CHAINED_WRANGLERS = DummyPatientQuery(wranglers=[MostRepeatedWrangler(), AverageWrangler()], dummy_data=DUMMY_DATA)
-    JSON = JSONFilePatientQuery(EXAMPLE_PATIENT_JSON_FILENAME)
+    JSON_FILE = JSONFilePatientQuery(filename=EXAMPLE_PATIENT_JSON_FILENAME)
 
     def test_dummy_single_wrangler_no_ties(self):
         self._assert_result(
@@ -158,6 +163,19 @@ class PatientQueriesTest(AssertResultTestCase):
                 'member_id': 1,
                 'info': PatientInfo({
                     'deductible': round((1000 + 1200 + 1000 + 1200) / 4),
+                    'stop_loss': 10000,
+                    'oop_max': 6000
+                })
+            })
+        )
+
+    def test_json_file_wrangler(self):
+        self._assert_result(
+            result=self.JSON_FILE.get_full_patient_info(1),
+            expected=Patient({
+                'member_id': 1,
+                'info': PatientInfo({
+                    'deductible': None,
                     'stop_loss': 10000,
                     'oop_max': 6000
                 })
